@@ -1,0 +1,26 @@
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: php-todo-cluster
+  region: us-east-2
+  version: "1.29"
+
+vpc:
+  id: vpc-0996571e821befba5
+  subnets:
+    public:
+      us-east-2a:
+        id: subnet-05a56891c55a6f0c1
+      us-east-2b:
+        id: subnet-0f68946233e52fd08
+
+nodeGroups:
+  - name: php-todo-nodes
+    instanceType: t2.medium
+    desiredCapacity: 2
+    minSize: 1
+    maxSize: 3
+    ssh:
+      allow: true
+      publicKeyPath: ~/.ssh/id_ed25519.pub

@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: php-crud-api-deployment
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: php-crud-api
+  template:
+    metadata:
+      labels:
+        app: php-crud-api
+    spec:
+      containers:
+        - name: php-crud-api
+          image: jawaid365/php-crud-api:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+          env:
+            - name: PHP_CRUD_API_DRIVER
+              valueFrom:
+                configMapKeyRef:
+                  name: php-crud-config
+                  key: DB_DRIVER
+            - name: PHP_CRUD_API_ADDRESS
+              valueFrom:
+                configMapKeyRef:
+                  name: php-crud-config
+                  key: DB_ADDRESS
+            - name: PHP_CRUD_API_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: php-crud-config
+                  key: DB_PORT
+            - name: PHP_CRUD_API_DATABASE
+              valueFrom:
+                configMapKeyRef:
+                  name: php-crud-config
+                  key: DB_NAME
+            - name: PHP_CRUD_API_USERNAME
+              valueFrom:
+                configMapKeyRef:
+                  name: php-crud-config
+                  key: DB_USER
+            - name: PHP_CRUD_API_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: php-crud-secret
+                  key: db-password
+            - name: PHP_CRUD_API_DEBUG
+              value: "1"

@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: php-crud-config
+data:
+  DB_DRIVER: "mysql"
+  DB_ADDRESS: "ip-10-0-140-147.ap-south-1.compute.internal"
+  DB_PORT: "3306"
+  DB_NAME: "todo"
+  DB_USER: "admin"
+

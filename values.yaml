@@ -1,0 +1,10 @@
+replicaCount: 2
+
+image:
+  repository: jawaid365/php-crud-api
+  tag: latest
+
+service:
+  type: LoadBalancer
+  port: 80
+
