@@ -1,0 +1,78 @@
+pipeline {
+agent { label 'k8s' }
+environment {
+GIT_REPO_SSH = "git@gitlab.com:akash8992/php-crud-api.git"
+NAMESPACE = "staging"
+SCANNER_HOME = tool 'sonar-scanner'
+}
+stages {
+    stage('Checkout') {
+        steps {
+            checkout([$class: 'GitSCM',
+                branches: [[name: 'staging']],
+                userRemoteConfigs: [[
+                url: "${env.GIT_REPO_SSH}",
+                credentialsId: 'gitlab-cred'
+                ]]
+              ])
+              sh 'git checkout -B staging origin/staging'
+       }
+   }
+     stage('SonarQube Analysis') {
+         steps {
+             withSonarQubeEnv('sonar-scanner') {
+             sh '${SCANNER_HOME}/bin/sonar-scanner -Dsonar.projectKey=php-crud-api -Dso
+             r.sources=. -Dsonar.host.url=http://3.145.204.121:9000'}
+             }
+           }
+     stage('Docker Build') {
+         steps {
+             script {
+              sh "docker build -t php-crud-api:latest ."
+              }
+            }
+         }
+     stage('Trivy Image Scan') {
+         steps {
+             sh "trivy image php-crud-api:latest || true"
+             }
+          }
+      stage('Docker Login & Push') {
+          steps {
+              withCredentials([usernamePassword(credentialsId: 'DockerHubCred', username
+              ariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+              sh """
+                echo "${DOCKER_PASS}" | docker login -u "${DOCKER_USER}" --password-stdin
+                docker tag php-crud-api:latest ${DOCKER_USER}/php-crud-api:latest
+                docker push ${DOCKER_USER}/php-crud-api:latest
+                """
+                }
+              }
+           }
+       stage('Deploy to Staging with Helm') {
+           steps {
+               sh """
+                  helm upgrade --install php-crud-api ./helm -f ./values.yaml --namespace
+                  $NAMESPACE
+                  """
+                 }
+               }
+       stage('Notify via Email') {
+           steps {
+               mail to: 'akash8992@gmail.com',
+               subject: ":white_tick: Jenkins Build #${env.BUILD_NUMBER} Successful - php-crud-api
+               ",
+               body: "Build ${env.BUILD_NUMBER} completed successfully.\nImage: jawaid36
+               5/php-crud-api:latest\nNamespace: ${NAMESPACE}"
+               }
+            }
+          }
+      post {
+        failure {
+            mail to: 'akash8992@gmail.com',
+            subject: ":x: Jenkins Build #${env.BUILD_NUMBER} Failed - php-crud-api",
+            body: "Build failed at stage: ${env.STAGE_NAME}\nCheck Jenkins logs for detai
+            ls."
+           }
+         }
+      }
